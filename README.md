@@ -1,5 +1,7 @@
 # vm-docker
 
+> simbafs version
+
 ## Usage Example
 
 filename: `vm` `vm-{tag}`
@@ -10,3 +12,4 @@ wget git.io/nella17-vm -O vm
 chmod +x vm
 ln -s vm vm-22.04
 ```
+

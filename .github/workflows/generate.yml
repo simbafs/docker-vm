@@ -1,69 +1,69 @@
 name: Build Images
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-  schedule:
-    - cron: '7 4 13 * *'
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+    schedule:
+        - cron: '7 4 13 * *'
 
 permissions:
-  contents: write
-  packages: write
+    contents: write
+    packages: write
 
 env:
-  IMAGE_NAME: ${{ github.actor }}/vm
+    IMAGE_NAME: ghcr.io/${{ github.actor }}/vm
 
 concurrency:
-  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
-  cancel-in-progress: true
+    group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+    cancel-in-progress: true
 
 jobs:
-  builder:
-    strategy:
-      fail-fast: false
-      matrix:
-        tag:
-          # - 'devel'
-        - 'rolling'
-        - 'latest'
-        - '24.04'
-        - '22.04'
-        - '20.04'
-          # - '18.04'
+    builder:
+        strategy:
+            fail-fast: false
+            matrix:
+                tag:
+                    # - 'devel'
+                    - 'rolling'
+                    - 'latest'
+                    - '24.04'
+                    - '22.04'
+                    - '20.04'
+                      # - '18.04'
 
-    runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
 
-      - run: sed -i 's/tag/${{ matrix.tag }}/' Dockerfile
+            - run: sed -i 's/tag/${{ matrix.tag }}/' Dockerfile
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.LOGIN_TOKEN }}
+            - name: 'Login to GitHub Container Registry'
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: ${{ matrix.tag }}
+            - name: Extract metadata (tags, labels) for Docker
+              id: meta
+              uses: docker/metadata-action@v4
+              with:
+                  images: ${{ env.IMAGE_NAME }}
+                  tags: ${{ matrix.tag }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v3
+              with:
+                  context: .
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
